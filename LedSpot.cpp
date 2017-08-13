@@ -4,6 +4,13 @@
 #define PWM_PIN  3
 
 
+#define RAMP_TIME 4000
+#define INCREMENT_TIME (RAMP_TIME/STEPS)
+#define TICK_TIME 10
+#define PRELL_TIME 50
+#define PRELL_TICKS (PRELL_TIME/TICK_TIME)
+#define INCREMENT_TICKS (INCREMENT_TIME/TICK_TIME)
+
 #define USE_FLOAT
 #ifdef USE_FLOAT
 	#define VAL_MIN 64
@@ -67,6 +74,14 @@ void writeLed() {
 	analogWrite(PWM_PIN, pwmInt);
 }
 
+void rampUp(int value) {
+	int valuesToRamp = value - VAL_MIN;
+	for (int i = VAL_MIN; i <= value; i++) {
+		val = i;
+		writeLed();
+		delay(INCREMENT_TIME);
+	}
+}
 
 void setup()
 {
@@ -80,15 +95,15 @@ void setup()
 	digitalWrite(PUSH_BUTTON_PIN, HIGH);
 
 	Serial.println("Initialized");
-	val = EEPROM.read(EEPROM_ADDR_OF_VAL);
+	int value = EEPROM.read(EEPROM_ADDR_OF_VAL);
 
-	if (val < VAL_MIN) {
-		val = VAL_MIN;
+	if (value < VAL_MIN) {
+		value = VAL_MIN;
 	} 
-	if (val > VAL_MAX) {
-		val = VAL_MAX;
+	if (value > VAL_MAX) {
+		value = VAL_MAX;
 	} 
-	writeLed();
+	rampUp(value);
 }
 
 bool incrementLed() {
@@ -121,13 +136,6 @@ bool isIncrementing = true;
 void toggleDirection() {
 	isIncrementing = !isIncrementing;
 }
-
-#define RAMP_TIME 4000
-#define INCREMENT_TIME (RAMP_TIME/STEPS)
-#define TICK_TIME 10
-#define PRELL_TIME 50
-#define PRELL_TICKS (PRELL_TIME/TICK_TIME)
-#define INCREMENT_TICKS (INCREMENT_TIME/TICK_TIME)
 
 
 void regulate(EventType event) {
