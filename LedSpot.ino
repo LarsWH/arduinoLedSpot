@@ -5,8 +5,8 @@
 #define TIME_HIGH 1
 #define TIME_LOW 40
 
-#define FIRST_KEY 10
-#define LAST_KEY 13
+#define FIRST_KEY 5 //10
+#define LAST_KEY  5 //13
 
 #define PRELL_DETECTS 4
 #define PRELL_WAIT	10
