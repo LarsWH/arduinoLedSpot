@@ -3,9 +3,8 @@
 #define PWM_PIN  3
 #define PUSH_BUTTON_PIN 5
 
-#define VAL_MIN 64
+#define VAL_MIN 0
 #define VAL_MAX 255
-#define MAX_PWM 255
 #define STEPS (VAL_MAX-VAL_MIN+1)
 #define RAMP_TIME 4000
 #define INCREMENT_TIME (RAMP_TIME/STEPS)
@@ -36,14 +35,17 @@ typedef enum RegulateState {
 
 
 //---------- Global variables ----------
-float max = 3.9961; //  max*max*max*max = 255
+#define FLOAT_MAX 4            //  max*max*max*max = 256
+#define FLOAT_MIN 1            //  min*min*min*min = 1
+#define FLOAT_RANGE (FLOAT_MAX - FLOAT_MIN)
+
 int val = VAL_MIN;
 bool isIncrementing = true;
 
 
 //---------- Prototypes ----------
 EventType keyDetect();
-void rampUp(int value);
+void rampUpLightAfterPowerOn(int value);
 void regulate(EventType event);
 
 
@@ -67,7 +69,7 @@ void setup()
 	if (value > VAL_MAX) {
 		value = VAL_MAX;
 	} 
-	rampUp(value);
+	rampUpLightAfterPowerOn(value);
 }
 
 void loop()
@@ -82,12 +84,17 @@ void loop()
 	delay(TICK_TIME);
 }
 
+/**
+The PWM has a dynamic range of 256 values (0 to 255), so regulation in 256 steps makes sense.
 
+These enteger values 'val' from 0 to 255 are mapped to floating point values in the range 1 to 4 and used in this
+polynomia: f(x) = x^4 to get a usable regulation of the light
+*/
 void writeLed() {
 	Serial.print("  val:");
 	Serial.print(val);
 
-	float scaled = ((float)val * max) / (float)VAL_MAX;
+	float scaled = (((float)val * FLOAT_RANGE) / (float)STEPS) + FLOAT_MIN;
 	Serial.print("  scaled:");
 	Serial.print(scaled);
 
@@ -96,8 +103,8 @@ void writeLed() {
 	Serial.print(pwmVal);
 
 	int pwmInt = (int)pwmVal;
-	if (pwmInt > MAX_PWM) {
-		pwmInt = MAX_PWM;
+	if (pwmInt > VAL_MAX) {
+		pwmInt = VAL_MAX;
 	}
 	Serial.print(" PWM:");
 	Serial.println(pwmInt);
@@ -106,7 +113,7 @@ void writeLed() {
 }
 
 
-void rampUp(int value) {
+void rampUpLightAfterPowerOn(int value) {
 	int valuesToRamp = value - VAL_MIN;
 	for (int i = VAL_MIN; i <= value; i++) {
 		val = i;
@@ -115,7 +122,7 @@ void rampUp(int value) {
 	}
 }
 
-bool incrementLed() {
+bool incrementLight() {
 	bool incremented = false;
 	if (val < VAL_MAX) {
 		val++;
@@ -126,7 +133,7 @@ bool incrementLed() {
 }
 
 
-bool decrementLed() {
+bool decrementLight() {
 	bool decremented = false;
 	if (val > VAL_MIN) {
 		val--;
@@ -137,7 +144,7 @@ bool decrementLed() {
 }
 
 
-void toggleDirection() {
+void toggleIncrementDecrement() {
 	isIncrementing = !isIncrementing;
 }
 
@@ -148,10 +155,10 @@ void regulate(EventType event) {
 
 	switch (event) 	{
 		case EVENT_KEY_RELEASE:
-			toggleDirection();
+			toggleIncrementDecrement();
 			state = IDLE;
 			writeLed();
-			EEPROM.update(EEPROM_ADDR_OF_VAL, val);
+			EEPROM.update(EEPROM_ADDR_OF_VAL, val); // Limit the number of EEPROM writes (=only when the key is released)
 			break;
 	}
 
@@ -176,7 +183,7 @@ void regulate(EventType event) {
 				case EVENT_TIMER_TICK:
 					if (!incrementTicks--) {
 						incrementTicks = INCREMENT_TICKS;
-						if (!incrementLed()) {
+						if (!incrementLight()) {
 							isIncrementing = false;
 							state = DECREMENT;
 						}
@@ -193,7 +200,7 @@ void regulate(EventType event) {
 				case EVENT_TIMER_TICK:
 					if (!incrementTicks--) {
 						incrementTicks = INCREMENT_TICKS;
-						if (!decrementLed()) {
+						if (!decrementLight()) {
 							isIncrementing = true;
 							state = INCREMENT;
 						}
