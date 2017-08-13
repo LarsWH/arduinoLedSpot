@@ -1,0 +1,7 @@
+#-------- VisualStudio --------
+Release
+Debug
+.vs
+
+#-------- VisualMicro --------
+__vm
