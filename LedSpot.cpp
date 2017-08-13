@@ -1,20 +1,21 @@
 #include "LedSpot.h"
 #include <EEPROM.h>
 #define EEPROM_ADDR_OF_VAL 0
-
 #define PWM_PIN  3
 
-//#define PRELL_WAIT	10
 
-//#define USE_FLOAT
+#define USE_FLOAT
 #ifdef USE_FLOAT
-	float max = 6.3413;
-	int steps = 255;
-	float increment = max / (float)steps;
+	#define VAL_MIN 64
+	#define VAL_MAX 255
+	#define MAX_PWM 255
+	#define STEPS (VAL_MAX-VAL_MIN+1)
+	float max = 3.9961; //6.3413;
 #else
-	#define VAL_MAX 10
 	#define VAL_MIN 0
-	int pwm[VAL_MAX + 1] = {
+	#define VAL_MAX 10
+	#define STEPS (VAL_MAX + 1)
+	int pwm[STEPS] = {
 		1, //1.7404
 		2,
 		3,
@@ -26,13 +27,45 @@
 		84,
 		146,
 		255 };
+
 #endif
-
-
 
 int val = VAL_MIN;
 
+
+
 #define PUSH_BUTTON_PIN 5
+
+void writeLed() {
+#ifdef USE_FLOAT
+
+	Serial.print("  val:");
+	Serial.print(val);
+
+	float scaled = ((float)val * max) / (float)VAL_MAX;
+
+	Serial.print("  scaled:");
+	Serial.print(scaled);
+
+
+	float pwmVal = scaled * scaled * scaled * scaled;
+
+	Serial.print("  pwmVal:");
+	Serial.print(pwmVal);
+
+	int pwmInt = (int)pwmVal;
+	if (pwmInt > MAX_PWM) {
+		pwmInt = MAX_PWM;
+	}
+#else
+	int pwmInt = pwm[val];
+#endif
+
+	Serial.print(" PWM:");
+	Serial.println(pwmInt);
+
+	analogWrite(PWM_PIN, pwmInt);
+}
 
 
 void setup()
@@ -48,49 +81,34 @@ void setup()
 
 	Serial.println("Initialized");
 	val = EEPROM.read(EEPROM_ADDR_OF_VAL);
-}
 
-void writeLed() {
-	analogWrite(PWM_PIN, pwm[val]);
+	if (val < VAL_MIN) {
+		val = VAL_MIN;
+	} 
+	if (val > VAL_MAX) {
+		val = VAL_MAX;
+	} 
+	writeLed();
 }
 
 bool incrementLed() {
 	bool incremented = false;
-
-#ifdef USE_FLOAT
-#else
 	if (val < VAL_MAX) {
 		val++;
 		incremented = true;
 	}
-
-	Serial.print("  val:");
-	Serial.print(val);
-	Serial.print(" PWM:");
-	Serial.println(pwm[val]);
 	writeLed();
-#endif
-
 	return incremented;
 }
 
 
 bool decrementLed() {
 	bool decremented = false;
-#ifdef USE_FLOAT
-#else
 	if (val > VAL_MIN) {
 		val--;
 		decremented = true;
 	}
-
-	Serial.print("  val:");
-	Serial.print(val);
-	Serial.print(" PWM:");
-	Serial.println(pwm[val]);
 	writeLed();
-#endif
-
 	return decremented;
 }
 
@@ -104,9 +122,10 @@ void toggleDirection() {
 	isIncrementing = !isIncrementing;
 }
 
-#define TICK_TIME 100
-#define PRELL_TIME 300
-#define INCREMENT_TIME 1000
+#define RAMP_TIME 4000
+#define INCREMENT_TIME (RAMP_TIME/STEPS)
+#define TICK_TIME 10
+#define PRELL_TIME 50
 #define PRELL_TICKS (PRELL_TIME/TICK_TIME)
 #define INCREMENT_TICKS (INCREMENT_TIME/TICK_TIME)
 
@@ -121,7 +140,7 @@ void regulate(EventType event) {
 			toggleDirection();
 			state = IDLE;
 			writeLed();
-			//EEPROM.update(EEPROM_ADDR_OF_VAL, val);
+			EEPROM.update(EEPROM_ADDR_OF_VAL, val);
 			break;
 	}
 
@@ -146,8 +165,7 @@ void regulate(EventType event) {
 			pString = "INCREMENT";
 			switch (event) {
 				case EVENT_TIMER_TICK:
-					incrementTicks--;
-					if (!incrementTicks) {
+					if (!incrementTicks--) {
 						incrementTicks = INCREMENT_TICKS;
 						if (!incrementLed()) {
 							isIncrementing = false;
@@ -165,8 +183,7 @@ void regulate(EventType event) {
 			pString = "DECREMENT";
 			switch (event) {
 				case EVENT_TIMER_TICK:
-					incrementTicks--;
-					if (!incrementTicks) {
+					if (!incrementTicks--) {
 						incrementTicks = INCREMENT_TICKS;
 						if (!decrementLed()) {
 							isIncrementing = true;
@@ -182,10 +199,10 @@ void regulate(EventType event) {
 
 	}
 
-	static int x = 0;
+/*	static int x = 0;
 	Serial.print(x++);
 	Serial.print(" State: ");
-	Serial.println(pString);
+	Serial.println(pString); */
 }
 
 void loop()
