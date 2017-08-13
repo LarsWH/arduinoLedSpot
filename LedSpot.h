@@ -1,0 +1,35 @@
+#pragma once
+
+
+typedef enum Event {
+	EVENT_NOTHING,
+	EVENT_KEY_PRESS,
+	EVENT_KEY_RELEASE,
+	EVENT_TIMER_TICK
+} EventType;
+
+typedef enum KeyState {
+	KEY_STATE_RELEASED,
+	KEY_STATE_BEING_PRESSED,
+	KEY_STATE_PRESSED,
+	KEY_STATE_BEING_RELEASED,
+} KeyStateType;
+
+typedef enum RegulateState {
+	IDLE,
+	INCREMENT_START,
+	INCREMENT,
+	INCREMENT_MAX_REACHED,
+	INCREMENT_SIGNAL_MAX,
+	DECREMENT_START,
+	DECREMENT,
+	DECREMENT_MIN_REACHED,
+	DECREMENT_SIGNAL_MIN
+} RegulateStateType;
+
+typedef enum RegulateDirection {
+	INCREMENTING,
+	DECREMENTING
+} RegulateDirectionType;
+
+extern EventType keyDetect();
