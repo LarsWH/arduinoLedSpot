@@ -106,16 +106,13 @@ void toggleDirection() {
 
 #define TICK_TIME 100
 #define PRELL_TIME 300
-#define SIGNAL_TIME 1000
 #define INCREMENT_TIME 1000
-#define SIGNAL_TICKS (SIGNAL_TIME/TICK_TIME)
 #define PRELL_TICKS (PRELL_TIME/TICK_TIME)
 #define INCREMENT_TICKS (INCREMENT_TIME/TICK_TIME)
 
 
 void regulate(EventType event) {
 	static RegulateStateType state = IDLE;
-	static int signalTicks = SIGNAL_TICKS;
 	static int incrementTicks = INCREMENT_TICKS;
 	char *pString = "Woops";
 
@@ -134,29 +131,13 @@ void regulate(EventType event) {
 			switch (event) {
 				case EVENT_KEY_PRESS:
 					if (isIncrementing) {
-						state = INCREMENT_START;
-					} else {
-						state = DECREMENT_START;
-					}
-					signalTicks = SIGNAL_TICKS;
-					break;
-				default:
-					break;
-			}
-			break;
-
-		case INCREMENT_START:
-			pString = "INCREMENT_START";
-			switch (event) {
-				case EVENT_TIMER_TICK:
-					signalTicks--;
-					if (!signalTicks) {
 						state = INCREMENT;
-						incrementTicks = INCREMENT_TICKS;
+					} else {
+						state = DECREMENT;
 					}
+					incrementTicks = INCREMENT_TICKS;
 					break;
 				default:
-					state = IDLE;
 					break;
 			}
 			break;
@@ -170,59 +151,8 @@ void regulate(EventType event) {
 						incrementTicks = INCREMENT_TICKS;
 						if (!incrementLed()) {
 							isIncrementing = false;
-							state = INCREMENT_MAX_REACHED;
-							signalTicks = SIGNAL_TICKS;
+							state = DECREMENT;
 						}
-					}
-					break;
-				default:
-					state = IDLE;
-					break;
-			}
-			break;
-
-		case INCREMENT_MAX_REACHED:
-			pString = "INCREMENT_MAX_REACHED";
-			switch (event) {
-				case EVENT_TIMER_TICK:
-					signalTicks--;
-					if (!signalTicks) {
-						state = INCREMENT_SIGNAL_MAX;
-						signalTicks = SIGNAL_TICKS;
-						analogWrite(PWM_PIN, 0);
-					}
-					break;
-				default:
-					state = IDLE;
-					break;
-			}
-			break;
-
-		case INCREMENT_SIGNAL_MAX:
-			pString = "INCREMENT_SIGNAL_MAX";
-			switch (event) {
-				case EVENT_TIMER_TICK:
-					signalTicks--;
-					if (!signalTicks) {
-						state = DECREMENT_START;
-						signalTicks = SIGNAL_TICKS;
-						writeLed();
-					}
-					break;
-				default:
-					state = IDLE;
-					break;
-			}
-			break;
-
-		case DECREMENT_START:
-			pString = "DECREMENT_START";
-			switch (event) {
-				case EVENT_TIMER_TICK:
-					signalTicks--;
-					if (!signalTicks) {
-						state = DECREMENT;
-						incrementTicks = INCREMENT_TICKS;
 					}
 					break;
 				default:
@@ -240,8 +170,7 @@ void regulate(EventType event) {
 						incrementTicks = INCREMENT_TICKS;
 						if (!decrementLed()) {
 							isIncrementing = true;
-							state = DECREMENT_MIN_REACHED;
-							signalTicks = SIGNAL_TICKS;
+							state = INCREMENT;
 						}
 					}
 					break;
@@ -251,39 +180,6 @@ void regulate(EventType event) {
 			}
 			break;
 
-		case DECREMENT_MIN_REACHED:
-			pString = "DECREMENT_MIN_REACHED";
-			switch (event) {
-				case EVENT_TIMER_TICK:
-					signalTicks--;
-					if (!signalTicks) {
-						state = DECREMENT_SIGNAL_MIN;
-						signalTicks = SIGNAL_TICKS;
-						analogWrite(PWM_PIN, 0);
-					}
-					break;
-				default:
-					state = IDLE;
-					break;
-			}
-			break;
-
-		case DECREMENT_SIGNAL_MIN:
-			pString = "DECREMENT_SIGNAL_MIN";
-			switch (event) {
-				case EVENT_TIMER_TICK:
-					signalTicks--;
-					if (!signalTicks) {
-						state = INCREMENT_START;
-						signalTicks = SIGNAL_TICKS;
-						writeLed();
-					}
-					break;
-				default:
-					state = IDLE;
-					break;
-			}
-			break;
 	}
 
 	static int x = 0;

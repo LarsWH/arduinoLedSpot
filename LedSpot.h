@@ -17,14 +17,8 @@ typedef enum KeyState {
 
 typedef enum RegulateState {
 	IDLE,
-	INCREMENT_START,
 	INCREMENT,
-	INCREMENT_MAX_REACHED,
-	INCREMENT_SIGNAL_MAX,
-	DECREMENT_START,
-	DECREMENT,
-	DECREMENT_MIN_REACHED,
-	DECREMENT_SIGNAL_MIN
+	DECREMENT
 } RegulateStateType;
 
 typedef enum RegulateDirection {
