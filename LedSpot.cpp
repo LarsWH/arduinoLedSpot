@@ -6,12 +6,9 @@
 #define VAL_MIN 0
 #define VAL_MAX 255
 #define STEPS (VAL_MAX-VAL_MIN+1)
-#define RAMP_TIME 4000
-#define INCREMENT_TIME (RAMP_TIME/STEPS)
 #define TICK_TIME 10
 #define PRELL_TIME 50
 #define PRELL_TICKS (PRELL_TIME/TICK_TIME)
-#define INCREMENT_TICKS (INCREMENT_TIME/TICK_TIME)
 
 typedef enum Event {
 	EVENT_NOTHING,
@@ -74,13 +71,18 @@ void setup()
 
 void loop()
 {
+	static long l = 0;
+
 	EventType event = keyDetect();
+
 	if (event == EVENT_NOTHING) {
-		regulate(EVENT_TIMER_TICK);
+		if (l % 4) {
+			regulate(EVENT_TIMER_TICK);
+		}
 	} else {
 		regulate(event);
 	}
-
+	l++;
 	delay(TICK_TIME);
 }
 
@@ -118,7 +120,7 @@ void rampUpLightAfterPowerOn(int value) {
 	for (int i = VAL_MIN; i <= value; i++) {
 		val = i;
 		writeLed();
-		delay(INCREMENT_TIME);
+		delay(40);
 	}
 }
 
@@ -151,7 +153,6 @@ void toggleIncrementDecrement() {
 
 void regulate(EventType event) {
 	static RegulateStateType state = IDLE;
-	static int incrementTicks = INCREMENT_TICKS;
 
 	switch (event) 	{
 		case EVENT_KEY_RELEASE:
@@ -171,7 +172,6 @@ void regulate(EventType event) {
 					} else {
 						state = DECREMENT;
 					}
-					incrementTicks = INCREMENT_TICKS;
 					break;
 				default:
 					break;
@@ -181,12 +181,9 @@ void regulate(EventType event) {
 		case INCREMENT:
 			switch (event) {
 				case EVENT_TIMER_TICK:
-					if (!incrementTicks--) {
-						incrementTicks = INCREMENT_TICKS;
-						if (!incrementLight()) {
-							isIncrementing = false;
-							state = DECREMENT;
-						}
+					if (!incrementLight()) {
+						isIncrementing = false;
+						state = DECREMENT;
 					}
 					break;
 				default:
@@ -198,12 +195,9 @@ void regulate(EventType event) {
 		case DECREMENT:
 			switch (event) {
 				case EVENT_TIMER_TICK:
-					if (!incrementTicks--) {
-						incrementTicks = INCREMENT_TICKS;
-						if (!decrementLight()) {
-							isIncrementing = true;
-							state = INCREMENT;
-						}
+					if (!decrementLight()) {
+						isIncrementing = true;
+						state = INCREMENT;
 					}
 					break;
 				default:
