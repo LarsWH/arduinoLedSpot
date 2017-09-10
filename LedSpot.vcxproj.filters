@@ -15,16 +15,16 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="LedSpot.ino" />
-  </ItemGroup>
-  <ItemGroup>
     <ClInclude Include="__vm\.LedSpot.vsarduino.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="LedSpot.cpp">
+    <ClCompile Include="arduinoLedSpot.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="arduinoLedSpot.ino" />
   </ItemGroup>
 </Project>
