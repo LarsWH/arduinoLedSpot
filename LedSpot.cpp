@@ -1,3 +1,4 @@
+#include <Arduino.h>
 #include <EEPROM.h>
 #define EEPROM_ADDR_OF_VAL 0
 #define PWM_PIN  3
